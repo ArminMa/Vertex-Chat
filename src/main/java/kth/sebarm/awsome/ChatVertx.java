@@ -102,6 +102,8 @@ public class ChatVertx extends AbstractVerticle{
                 else {
                     System.out.println("Received " + data.toString());
                     Group group = createGroup(sender, data.toString());
+
+                    //TODO check if group already exists
                     mongoClient.insert(GROUP_COLLECTION, group.toJson(), handler -> {
                        if (handler.succeeded()){
                            webSocketHandler.writeBinaryMessage(Buffer.buffer(String.valueOf(group.getId())));
