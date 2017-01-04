@@ -1,6 +1,7 @@
 {
-  "http.port": 8082,
-  "socket.port": 8083,
+  "http.port": 8090,
+  "socket.group.port": 5091,
+  "socket.chat.port": 5092,
   "db_name": "chatDB",
   "connection_string": "mongodb://localhost:27017"
 }

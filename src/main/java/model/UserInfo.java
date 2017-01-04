@@ -4,11 +4,12 @@ import io.vertx.core.http.ServerWebSocket;
 import io.vertx.core.json.JsonObject;
 
 import java.io.Serializable;
+import java.util.Comparator;
 
 /**
  * Created by sebastian markström on 2016-12-31.
  */
-public class UserInfo implements Serializable{
+public class UserInfo implements Serializable, Comparator<UserInfo>, Comparable<UserInfo>{
     private ServerWebSocket userSocket;
     private String password;
     private String userName;
@@ -70,6 +71,11 @@ public class UserInfo implements Serializable{
     }
 
     @Override
+    public int compare(UserInfo o1, UserInfo o2) {
+        return o1.getUserName().compareTo(o2.getUserName());
+    }
+
+    @Override
     public boolean equals(Object obj) {
         io.vertx.core.net.SocketAddress address = ((UserInfo)obj).userSocket.remoteAddress();
         System.out.println("address = " + address.toString());
@@ -82,5 +88,19 @@ public class UserInfo implements Serializable{
     @Override
     public int hashCode() {
         return userSocket.remoteAddress().port() + userSocket.remoteAddress().port();
+    }
+
+    @Override
+    public int compareTo(UserInfo o) {
+        return this.getUserName().compareTo(o.getUserName());
+    }
+
+    @Override
+    public String toString() {
+        return "UserInfo{" +
+                "password='" + password + '\'' +
+                ", userName='" + userName + '\'' +
+                ", email='" + email + '\'' +
+                '}';
     }
 }

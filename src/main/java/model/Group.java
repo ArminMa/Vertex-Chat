@@ -1,25 +1,53 @@
 package model;
 
-import java.util.ArrayList;
-import java.util.Arrays;
-import java.util.Collections;
-import java.util.List;
+import io.vertx.core.json.JsonArray;
+import io.vertx.core.json.JsonObject;
+
+import java.util.*;
 
 /**
  * Created by sebastian markström on 2017-01-02.
  */
 public class Group {
-    private long id;
+    private String id = "";
     private List<UserInfo> users;
 
-    public Group(long id, List<UserInfo> users) {
-        this.id = id;
-        this.users = users;
+    public Group() {
+        users = new ArrayList<>();
     }
 
-    public Group(long id,UserInfo[] users) {
-        this.id = id;
+    public Group(List<UserInfo> users) {
+        this.users = users;
+        Collections.sort(this.users);
+        id = generateId();
+    }
+
+    public Group(UserInfo[] users) {
         this.users = Arrays.asList(users);
+        Collections.sort(this.users);
+        id = generateId();
+    }
+
+    public Group(JsonObject json){
+        System.out.println("in group constructor");
+        this.id = json.getString("id");
+        this.users = new ArrayList<>();
+        JsonArray users = json.getJsonArray("users");
+        for (int i = 0; i < users.size(); i++){
+            this.users.add(new UserInfo(users.getJsonObject(i)));
+        }
+        System.out.println("outside group constructor");
+    }
+
+    public JsonObject toJson(){
+        JsonArray list = new JsonArray();
+        for (UserInfo user: users) {
+            list.add(user.toJson());
+        }
+        JsonObject json = new JsonObject()
+                .put("id", id)
+                .put("users", list);
+        return json;
     }
 
     public List<UserInfo> getUsers() {
@@ -28,17 +56,59 @@ public class Group {
 
     public void addUsers(List<UserInfo> users){
         this.users.addAll(users);
+        Collections.sort(this.users);
     }
 
     public void setUsers(List<UserInfo> users) {
         this.users = users;
+        Collections.sort(this.users);
     }
 
-    public long getId() {
+    public String getId() {
         return id;
     }
 
-    public void setId(long id) {
+    public void setId(String id) {
         this.id = id;
+    }
+
+    public void addUser(UserInfo user) {
+        users.add(user);
+        Collections.sort(this.users);
+    }
+
+    public void removeUser(UserInfo userInfo) {
+        users.remove(userInfo);
+    }
+
+    /**
+     * Generates an id based on participating users
+     * @return id
+     */
+    public String generateId(){
+        String id = "";
+        for (UserInfo user: users) {
+            id += user.getUserName();
+        }
+        return id;
+    }
+
+    public static Comparator<Group> comparator = new Comparator<Group>() {
+        @Override
+        public int compare(Group group1, Group group2) {
+            return (group1.getId().compareTo(group2.getId()));
+        }
+    };
+
+    public static Comparator<Group> getComparator() {
+        return comparator;
+    }
+
+    @Override
+    public String toString() {
+        return "Group{" +
+                "id='" + id + '\'' +
+                ", users=" + users +
+                '}';
     }
 }

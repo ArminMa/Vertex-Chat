@@ -8,49 +8,59 @@ import java.util.Date;
  * Created by sebastian markström on 2017-01-01.
  */
 public class MessagePojo {
-    public String message;
-    public String receiverMail;
-    public String senderMail;
-    public String senderName;
-    public String date;
+    private String message;
+    private String groupId;
+    private String date;
 
     public MessagePojo() {
     }
 
-    public MessagePojo(String receiver, String message) {
+    public MessagePojo(String groupId, String message) {
         this.message = message;
-        this.receiverMail = receiver;
+        this.groupId = groupId;
     }
 
     public MessagePojo (JsonObject json){
         this.message = json.getString("message");
-        this.receiverMail = json.getString("receiver_mail");
+        this.groupId = json.getString("groupId");
         if(json.getString("date") != null) {
             this.date = json.getString("date");
         } else {
             this.date = new Date().toString();
-        }
-        if(json.getString("sender_mail") != null){
-            this.senderMail = json.getString("sender_mail");
-        }
-        if(json.getString("sender_name") != null){
-            this.senderMail = json.getString("sender_name");
         }
     }
 
     public JsonObject toJson(){
         JsonObject json = new JsonObject()
                 .put("message", message)
-                .put("receiver_mail", receiverMail);
+                .put("groupId", groupId);
         if(date != null) {
             json.put("date", date);
         }
-        if(senderMail != null){
-            json.put("sender_mail", senderMail);
-        }
-        if (senderName != null){
-            json.put("sender_name", senderName);
-        }
         return json;
+    }
+
+    public String getMessage() {
+        return message;
+    }
+
+    public void setMessage(String message) {
+        this.message = message;
+    }
+
+    public String getGroupId() {
+        return groupId;
+    }
+
+    public void setGroupId(String groupId) {
+        this.groupId = groupId;
+    }
+
+    public String getDate() {
+        return date;
+    }
+
+    public void setDate(String date) {
+        this.date = date;
     }
 }
