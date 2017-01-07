@@ -114,10 +114,10 @@ public class ChatVertx extends AbstractVerticle{
                            logger.info("group id = " + groupId);
                            JsonObject json = new JsonObject();
                            json.put("groupid", groupId);
-                           logger.info("sent message:" + Buffer.buffer(json.toString()));
+                           logger.info("sent message:" + json.toString());
                            for (UserInfo user: group.getUsers()) {
                                logger.info(user.getUsername());
-                               user.getUserSocket().write(Buffer.buffer().appendString(json.toString()));
+                               user.getUserSocket().writeFinalTextFrame(json.toString());
                            }
                        } else {
                            logger.info("something went wrong. group not created");
