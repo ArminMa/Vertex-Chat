@@ -12,27 +12,27 @@ import java.util.Comparator;
 public class UserInfo implements Serializable, Comparator<UserInfo>, Comparable<UserInfo>{
     private ServerWebSocket userSocket;
     private String password;
-    private String userName;
+    private String username;
     private String email;
 
     public UserInfo() {
     }
 
-    public UserInfo(String email, String userName, String password) {
+    public UserInfo(String email, String username, String password) {
         this.password = password;
-        this.userName = userName;
+        this.username = username;
         this.email = email;
     }
 
     public UserInfo(JsonObject json) {
-        this.userName = json.getString("userName");
+        this.username = json.getString("username");
         this.password = json.getString("password");
         this.email = json.getString("email");
     }
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject()
-                .put("userName", userName)
+                .put("username", username)
                 .put("password", password)
                 .put("email", email);
         return json;
@@ -46,12 +46,12 @@ public class UserInfo implements Serializable, Comparator<UserInfo>, Comparable<
         this.password = password;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {
@@ -72,7 +72,7 @@ public class UserInfo implements Serializable, Comparator<UserInfo>, Comparable<
 
     @Override
     public int compare(UserInfo o1, UserInfo o2) {
-        return o1.getUserName().compareTo(o2.getUserName());
+        return o1.getUsername().compareTo(o2.getUsername());
     }
 
     @Override
@@ -92,14 +92,14 @@ public class UserInfo implements Serializable, Comparator<UserInfo>, Comparable<
 
     @Override
     public int compareTo(UserInfo o) {
-        return this.getUserName().compareTo(o.getUserName());
+        return this.getUsername().compareTo(o.getUsername());
     }
 
     @Override
     public String toString() {
         return "UserInfo{" +
                 "password='" + password + '\'' +
-                ", userName='" + userName + '\'' +
+                ", username='" + username + '\'' +
                 ", email='" + email + '\'' +
                 '}';
     }

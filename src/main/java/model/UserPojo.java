@@ -7,7 +7,7 @@ import io.vertx.core.json.JsonObject;
  */
 public class UserPojo {
     private String password;
-    private String userName;
+    private String username;
     private String email;
 
     public UserPojo() {
@@ -15,19 +15,19 @@ public class UserPojo {
 
     public UserPojo(String password, String userName, String email) {
         this.password = password;
-        this.userName = userName;
+        this.username = userName;
         this.email = email;
     }
 
     public UserPojo(JsonObject json) {
-        this.userName = json.getString("userName");
+        this.username = json.getString("username");
         this.password = json.getString("password");
         this.email = json.getString("email");
     }
 
     public JsonObject toJson() {
         JsonObject json = new JsonObject()
-                .put("userName", userName)
+                .put("username", username)
                 .put("password", password)
                 .put("email", email);
         return json;
@@ -41,12 +41,12 @@ public class UserPojo {
         this.password = password;
     }
 
-    public String getUserName() {
-        return userName;
+    public String getUsername() {
+        return username;
     }
 
-    public void setUserName(String userName) {
-        this.userName = userName;
+    public void setUsername(String username) {
+        this.username = username;
     }
 
     public String getEmail() {

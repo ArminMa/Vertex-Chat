@@ -88,7 +88,7 @@ public class Group {
     public String generateId(){
         String id = "";
         for (UserInfo user: users) {
-            id += user.getUserName();
+            id += user.getUsername();
         }
         return id;
     }

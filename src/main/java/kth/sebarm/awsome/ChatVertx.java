@@ -81,17 +81,19 @@ public class ChatVertx extends AbstractVerticle{
     private void createGroupServer() {
         HttpServer server = vertx.createHttpServer();
         server.websocketHandler(webSocketHandler -> {
-            System.out.println("Client connected");
+            System.out.println("Client connected to register/group server");
             webSocketHandler.exceptionHandler(disconnectEvent -> {
+                logger.info(webSocketHandler.remoteAddress().toString() + ", disconnected");
                 handleDisconnect(webSocketHandler);
             });
 
             webSocketHandler.closeHandler(closeEvent -> {
-                connectedUsers.remove(webSocketHandler);
                 System.out.println("socket closed");
+                handleDisconnect(webSocketHandler);
             });
 
             webSocketHandler.handler(data -> {
+                logger.info("received data from client: " + data.toString());
                 UserInfo sender = getUserBySocketHandler(webSocketHandler);
                 if(sender == null) {
                     System.out.println("Received data " + data.toString("ISO-8859-1"));
@@ -102,12 +104,23 @@ public class ChatVertx extends AbstractVerticle{
                 else {
                     System.out.println("Received " + data.toString());
                     Group group = createGroup(sender, data.toString());
-
+                    logger.info("group created");
                     //TODO check if group already exists
+                    // save the grup in the MongoDB
                     mongoClient.insert(GROUP_COLLECTION, group.toJson(), handler -> {
                        if (handler.succeeded()){
-                           webSocketHandler.writeBinaryMessage(Buffer.buffer(String.valueOf(group.getId())));
+                           logger.info("group created");
+                           String groupId = group.getId();
+                           logger.info("group id = " + groupId);
+                           JsonObject json = new JsonObject();
+                           json.put("groupid", groupId);
+                           logger.info("sent message:" + Buffer.buffer(json.toString()));
+                           for (UserInfo user: group.getUsers()) {
+                               logger.info(user.getUsername());
+                               user.getUserSocket().write(Buffer.buffer().appendString(json.toString()));
+                           }
                        } else {
+                           logger.info("something went wrong. group not created");
                            webSocketHandler.writeBinaryMessage(Buffer.buffer("failed to create group :-C"));
                        }
                     });
@@ -125,7 +138,7 @@ public class ChatVertx extends AbstractVerticle{
     private void createChatServer() {
         HttpServer chatServer = vertx.createHttpServer();
         chatServer.websocketHandler(webSocketHandler -> {
-            System.out.println("Client connected");
+            System.out.println("Client connected to chatserver");
             webSocketHandler.exceptionHandler(disconnectEvent -> {
                 //TODO
                 System.out.println("Client socket disconnected");
@@ -134,6 +147,7 @@ public class ChatVertx extends AbstractVerticle{
             webSocketHandler.closeHandler(closeEvent -> {
                 //TODO
                 System.out.println("user socket closed");
+
             });
             webSocketHandler.handler(data -> {
                 System.out.println("Received data " + data.toString("ISO-8859-1"));
@@ -141,6 +155,7 @@ public class ChatVertx extends AbstractVerticle{
                 System.out.println("parsed message: " + message.getMessage());
 
                 Group group = groups.get(message.getGroupId());
+                //group not in memory. get group from db
                 if(group == null){
                     group = new Group();
                     group.setId(message.getGroupId());
@@ -151,7 +166,8 @@ public class ChatVertx extends AbstractVerticle{
                             Group newGroup = new Group(objects.get(0));
                             groups.put(newGroup.getId(), newGroup);
                             for (UserInfo user: newGroup.getUsers()) {
-                                user.getUserSocket().writeBinaryMessage(Buffer.buffer(message.getMessage()));
+                                logger.info("member: " + user.getUsername());
+                                user.getUserSocket().write(Buffer.buffer().appendString(message.getMessage()));
                             }
                         } else {
                             System.out.println("Specified group is not registered. did not send message");
@@ -178,34 +194,30 @@ public class ChatVertx extends AbstractVerticle{
 
     private Group createGroup(UserInfo sender, String data) {
         System.out.println("in create group before parsing data from buffer");
-        UserPojo[] userInfos = Json.decodeValue(data, UserPojo[].class);
+        UserPojo userInfo = Json.decodeValue(data, UserPojo.class);
         System.out.println("passed parse");
-        List<UserInfo> users = new ArrayList<>();
-        //create group
-        Group group = new Group();
-        for (UserPojo user : userInfos){
-            for (UserInfo connectedUser : connectedUsers) {
-                    if (connectedUser.getUserName().equals(user.getUserName()))
-                    {
-                        System.out.println("added user " + user.getUserName() + " to group");
-                        users.add(connectedUser);
-                        break;
-                    }
+        for (UserInfo connectedUser : connectedUsers) {
+            if(userInfo.getUsername().equals(connectedUser.getUsername())){
+                Group group = new Group();
+                List<UserInfo> users = new ArrayList<UserInfo>();
+                users.add(connectedUser);
+                users.add(sender);
+                group.setUsers(users);
+                group.setId(group.generateId());
+                logger.info("created group");
+                return group;
             }
         }
-        group.setUsers(users);
-        group.addUser(sender);
-        group.setId(group.generateId());
-        System.out.println("group: " + group.toString());
-        return group;
+        return null;
     }
 
     private static void handleDisconnect(ServerWebSocket webs) {
-        System.out.println("client disconnected");
-        webs.close();
+        logger.info("in handle disconnect");
         UserInfo user = getUserBySocketHandler(webs);
         connectedUsers.remove(user);
         System.out.println("usersockets size = " + connectedUsers.size());
+        if(webs != null)
+            webs.close();
     }
 
     public void completeStartup(AsyncResult<HttpServer> http, Future<Void> future){
@@ -344,5 +356,29 @@ public class ChatVertx extends AbstractVerticle{
 //            });
 //        });
 //        server.listen(config().getInteger("socket.chat.port", 5092));
+//    }
+
+  //  private Group createGroup(UserInfo sender, String data) {
+//        System.out.println("in create group before parsing data from buffer");
+//        UserPojo[] userInfos = Json.decodeValue(data, UserPojo[].class);
+//        System.out.println("passed parse");
+//        List<UserInfo> users = new ArrayList<>();
+//        //create group
+//        Group group = new Group();
+//        for (UserPojo user : userInfos){
+//            for (UserInfo connectedUser : connectedUsers) {
+//                    if (connectedUser.getUsername().equals(user.getUsername()))
+//                    {
+//                        System.out.println("added user " + user.getUsername() + " to group");
+//                        users.add(connectedUser);
+//                        break;
+//                    }
+//            }
+//        }
+//        group.setUsers(users);
+//        group.addUser(sender);
+//        group.setId(group.generateId());
+//        System.out.println("group: " + group.toString());
+//        return group;
 //    }
 }
