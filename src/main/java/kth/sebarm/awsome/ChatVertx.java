@@ -19,6 +19,7 @@ import model.*;
 import java.util.ArrayList;
 import java.util.HashMap;
 import java.util.List;
+import java.util.Map;
 
 /**
  * Created by sebastian markström on 2017-01-02.
@@ -108,21 +109,22 @@ public class ChatVertx extends AbstractVerticle{
                     //TODO check if group already exists
                     // save the group in the MongoDB
                     mongoClient.insert(GROUP_COLLECTION, group.toJson(), handler -> {
-                       if (handler.succeeded()){
-                           logger.info("group created");
-                           String groupId = handler.result();
-                           logger.info("group id = " + groupId);
-                           JsonObject json = new JsonObject();
-                           json.put("groupid", groupId);
-                           logger.info("sent message:" + json.toString());
-                           for (UserInfo user: group.getUsers()) {
-                               logger.info(user.getUsername());
-                               user.getUserSocket().writeFinalTextFrame(json.toString());
-                           }
-                       } else {
-                           logger.info("something went wrong. group not created");
-                           webSocketHandler.writeFinalTextFrame("failed to create group :-C");
-                       }
+                        if (handler.succeeded()){
+                            logger.info("group created");
+                            //mongodb generated _id
+                            String groupId = handler.result();
+                            logger.info("group id = " + groupId);
+                            JsonObject json = new JsonObject();
+                            json.put("groupid", groupId);
+                            logger.info("sent message:" + json.toString());
+                            for (UserInfo user: group.getUsers()) {
+                                logger.info(user.getUsername());
+                                user.getUserSocket().writeFinalTextFrame(json.toString());
+                            }
+                        } else {
+                            logger.info("something went wrong. group not created");
+                            webSocketHandler.writeFinalTextFrame("failed to create group :-C");
+                        }
                     });
                 }
             });
@@ -147,7 +149,7 @@ public class ChatVertx extends AbstractVerticle{
             webSocketHandler.closeHandler(closeEvent -> {
                 //TODO
                 System.out.println("user socket closed");
-
+                handleChatServerDisconnect(webSocketHandler);
             });
             webSocketHandler.handler(data -> {
                 System.out.println("Received data " + data.toString("ISO-8859-1"));
@@ -164,6 +166,7 @@ public class ChatVertx extends AbstractVerticle{
                             System.out.println(handler.result().size() + " groups found. attempting to parse data");
                             List<JsonObject> objects = handler.result();
                             Group newGroup = new Group(objects.get(0));
+                            newGroup.setId(message.getGroupid());
                             addSocketTooGroup(newGroup, webSocketHandler, message.getSendername());
                             groups.put(message.getGroupid(), newGroup);
                         } else {
@@ -176,12 +179,8 @@ public class ChatVertx extends AbstractVerticle{
                     logger.info("group already in memory. proceeding normally");
                     addUserSocketIfNotRegistered(webSocketHandler, message, group);
                     if(message.getMessage() != null && !message.getMessage().equals("")) {
-                        //write to all participants
-                        for (UserInfo user : group.getUsers()) {
-                            if (user.getUserSocket() != null) {
-                                user.getUserSocket().writeFinalTextFrame(message.getMessage());
-                            }
-                        }
+                        String completeMessage = message.getSendername() + ": " + message.getMessage();
+                        sendMessageToGroup(group, completeMessage);
                         logger.info("message sent to all connected users");
                     } else {
                         logger.info("user registered");
@@ -195,6 +194,46 @@ public class ChatVertx extends AbstractVerticle{
                 System.out.println("Failed to bind chat server socket!");
             }
         });
+    }
+
+    private void handleChatServerDisconnect(ServerWebSocket webSocketHandler) {
+        Group removeGroup = null;
+        UserInfo removedUser = null;
+        for (Group group : groups.values()) {
+            logger.info("itterating through groups");
+            for (UserInfo user: group.getUsers()) {
+                if(user.getUserSocket() != null) {
+                    if (user.getUserSocket().equals(webSocketHandler)) {
+                        removeGroup = group;
+                        removedUser = user;
+                        user.setUserSocket(null);
+                    }
+                }
+            }
+        }
+
+        for (UserInfo user: removeGroup.getUsers()){
+            if (user.getUserSocket() != null){
+                logger.info("users are still online. group still in memory");
+                String message = removedUser.getUsername() + " has left the chat";
+                sendMessageToGroup(removeGroup, message);
+                return;
+            }
+        }
+        logger.info("all participants from group has left. removing group from memory");
+        groups.remove(removeGroup.getId());
+        logger.info("number of online groups is " + groups.size());
+    }
+
+    /**
+     * Sends a message to all connected users
+     */
+    private void sendMessageToGroup(Group group, String message) {
+        for (UserInfo userInfo: group.getUsers()) {
+            if (userInfo.getUserSocket() != null){
+                userInfo.getUserSocket().writeFinalTextFrame(message);
+            }
+        }
     }
 
     private void addUserSocketIfNotRegistered(ServerWebSocket webSocketHandler, MessagePojo message, Group group) {
@@ -215,11 +254,6 @@ public class ChatVertx extends AbstractVerticle{
                 newGroup.getUsers().get(i).setUserSocket(webSocketHandler);
             }
         }
-    }
-
-    private UserInfo getUserByUserName(String username) {
-
-        return null;
     }
 
     private Group createGroup(UserInfo sender, String data) {
@@ -387,7 +421,7 @@ public class ChatVertx extends AbstractVerticle{
 //        server.listen(config().getInteger("socket.chat.port", 5092));
 //    }
 
-  //  private Group createGroup(UserInfo sender, String data) {
+    //  private Group createGroup(UserInfo sender, String data) {
 //        System.out.println("in create group before parsing data from buffer");
 //        UserPojo[] userInfos = Json.decodeValue(data, UserPojo[].class);
 //        System.out.println("passed parse");
