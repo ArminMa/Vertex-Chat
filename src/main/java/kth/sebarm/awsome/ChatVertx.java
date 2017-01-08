@@ -166,12 +166,6 @@ public class ChatVertx extends AbstractVerticle{
                             Group newGroup = new Group(objects.get(0));
                             addSocketTooGroup(newGroup, webSocketHandler, message.getSendername());
                             groups.put(message.getGroupid(), newGroup);
-                            for (UserInfo user: newGroup.getUsers()) {
-                                logger.info("member: " + user.getUsername());
-                                if(user.getUserSocket() != null) {
-                                    user.getUserSocket().writeFinalTextFrame(message.getMessage());
-                                }
-                            }
                         } else {
                             System.out.println("Specified group is not registered. did not send message");
                             webSocketHandler.writeFinalTextFrame("Specified group is not registered. did not send message");
@@ -180,14 +174,18 @@ public class ChatVertx extends AbstractVerticle{
                     });
                 }  else {
                     logger.info("group already in memory. proceeding normally");
-                    addUserSocketIfNotRegisred(webSocketHandler, message, group);
-                    //write to all participants
-                    for (UserInfo user: group.getUsers()) {
-                        if(user.getUserSocket() != null) {
-                            user.getUserSocket().writeFinalTextFrame(message.getMessage());
+                    addUserSocketIfNotRegistered(webSocketHandler, message, group);
+                    if(message.getMessage() != null && !message.getMessage().equals("")) {
+                        //write to all participants
+                        for (UserInfo user : group.getUsers()) {
+                            if (user.getUserSocket() != null) {
+                                user.getUserSocket().writeFinalTextFrame(message.getMessage());
+                            }
                         }
+                        logger.info("message sent to all connected users");
+                    } else {
+                        logger.info("user registered");
                     }
-                    System.out.println("message sent");
                 }
             });
         }).listen(config().getInteger("socket.chat.port", 5092), "localhost", res -> {
@@ -199,7 +197,7 @@ public class ChatVertx extends AbstractVerticle{
         });
     }
 
-    private void addUserSocketIfNotRegisred(ServerWebSocket webSocketHandler, MessagePojo message, Group group) {
+    private void addUserSocketIfNotRegistered(ServerWebSocket webSocketHandler, MessagePojo message, Group group) {
         for (UserInfo user: group.getUsers()) {
             if(user.getUsername().equals(message.getSendername())){
                 if(user.getUserSocket() == null){
