@@ -9,7 +9,7 @@ import java.util.*;
  * Created by sebastian markström on 2017-01-02.
  */
 public class Group {
-    private String id = "";
+    private String _id = "";
     private List<UserInfo> users;
 
     public Group() {
@@ -19,18 +19,18 @@ public class Group {
     public Group(List<UserInfo> users) {
         this.users = users;
         Collections.sort(this.users);
-        id = generateId();
+        _id = generateId();
     }
 
     public Group(UserInfo[] users) {
         this.users = Arrays.asList(users);
         Collections.sort(this.users);
-        id = generateId();
+        _id = generateId();
     }
 
     public Group(JsonObject json){
         System.out.println("in group constructor");
-        this.id = json.getString("id");
+        this._id = json.getString("id");
         this.users = new ArrayList<>();
         JsonArray users = json.getJsonArray("users");
         for (int i = 0; i < users.size(); i++){
@@ -45,7 +45,7 @@ public class Group {
             list.add(user.toJson());
         }
         JsonObject json = new JsonObject()
-                .put("id", id)
+                .put("id", _id)
                 .put("users", list);
         return json;
     }
@@ -65,11 +65,11 @@ public class Group {
     }
 
     public String getId() {
-        return id;
+        return _id;
     }
 
     public void setId(String id) {
-        this.id = id;
+        this._id = id;
     }
 
     public void addUser(UserInfo user) {
@@ -107,7 +107,7 @@ public class Group {
     @Override
     public String toString() {
         return "Group{" +
-                "id='" + id + '\'' +
+                "id='" + _id + '\'' +
                 ", users=" + users +
                 '}';
     }

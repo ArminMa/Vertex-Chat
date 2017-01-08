@@ -154,15 +154,17 @@ public class ChatVertx extends AbstractVerticle{
                 MessagePojo message = Json.decodeValue(data.toString(), MessagePojo.class);
                 System.out.println("parsed message: " + message.getMessage());
 
-                Group group = groups.get(message.getGroupId());
+                Group group = groups.get(message.getgroupid());
                 //group not in memory. get group from db
                 if(group == null){
                     group = new Group();
-                    group.setId(message.getGroupId());
+                    group.setId(message.getgroupid());
+                    logger.info("search group by id: " + message.getgroupid());
                     mongoClient.find(GROUP_COLLECTION, group.toJson(), handler -> {
                         if (handler.succeeded()) {
-                            System.out.println("group found. attempting to parse data");
+                            System.out.println(handler.result().size() + " groups found. attempting to parse data");
                             List<JsonObject> objects = handler.result();
+
                             Group newGroup = new Group(objects.get(0));
                             groups.put(newGroup.getId(), newGroup);
                             for (UserInfo user: newGroup.getUsers()) {

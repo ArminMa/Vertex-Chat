@@ -9,7 +9,7 @@ import java.util.Date;
  */
 public class MessagePojo {
     private String message;
-    private String groupId;
+    private String groupid;
     private String date;
 
     public MessagePojo() {
@@ -17,12 +17,12 @@ public class MessagePojo {
 
     public MessagePojo(String groupId, String message) {
         this.message = message;
-        this.groupId = groupId;
+        this.groupid = groupId;
     }
 
     public MessagePojo (JsonObject json){
         this.message = json.getString("message");
-        this.groupId = json.getString("groupId");
+        this.groupid = json.getString("groupid");
         if(json.getString("date") != null) {
             this.date = json.getString("date");
         } else {
@@ -33,7 +33,7 @@ public class MessagePojo {
     public JsonObject toJson(){
         JsonObject json = new JsonObject()
                 .put("message", message)
-                .put("groupId", groupId);
+                .put("groupid", groupid);
         if(date != null) {
             json.put("date", date);
         }
@@ -48,12 +48,12 @@ public class MessagePojo {
         this.message = message;
     }
 
-    public String getGroupId() {
-        return groupId;
+    public String getgroupid() {
+        return groupid;
     }
 
-    public void setGroupId(String groupId) {
-        this.groupId = groupId;
+    public void setGroupid(String groupId) {
+        this.groupid = groupId;
     }
 
     public String getDate() {
