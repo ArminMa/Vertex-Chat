@@ -52,27 +52,6 @@ public class ChatVertx extends AbstractVerticle{
     }
 
     public void startWebApp(Handler<AsyncResult<HttpServer>> next){
-        System.out.println("start webapp called");
-        // Create event bus
-        EventBus eventBus = vertx.eventBus();
-
-        // create routing indexes for 8090 port
-        Router router = Router.router(vertx);
-        router.route("/assets/*").handler(StaticHandler.create("assets"));
-        router.post("/api/register");
-        router.get("/api/users").handler(this::getUsers);
-        router.get("/api/getMessages").handler(this::getAllMessagesFromUser);
-        router.route().failureHandler(errorHandler());
-
-        vertx
-                .createHttpServer()
-                .requestHandler(router::accept)
-                .listen(
-                        // Retrieve the port from the configuration,
-                        // default to 8082.
-                        config().getInteger("http.port", 8090),
-                        next::handle
-                );
         //socket create group server
         createGroupServer();
         //create chat server
