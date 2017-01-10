@@ -85,7 +85,6 @@ public class ChatVertx extends AbstractVerticle{
                     System.out.println("Received " + data.toString());
                     Group group = createGroup(sender, data.toString());
                     logger.info("group created");
-                    //TODO check if group already exists
                     // save the group in the MongoDB
                     mongoClient.insert(GROUP_COLLECTION, group.toJson(), handler -> {
                         if (handler.succeeded()){
